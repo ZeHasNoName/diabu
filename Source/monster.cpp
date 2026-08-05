@@ -3682,6 +3682,13 @@ RaiseUndeadResult RaiseMonsterFromCorpse(Player &owner, Point corpsePosition)
 	monster->flags |= MFLAG_PLAYER_MINION | MFLAG_SEARCH;
 	monster->minionOwner = ownerId;
 	monster->isRaisedUndead = true;
+	monster->maxHitPoints *= 2;
+	monster->hitPoints = monster->maxHitPoints;
+	monster->minDamage *= 2;
+	monster->maxDamage *= 2;
+	monster->minDamageSpecial *= 2;
+	monster->maxDamageSpecial *= 2;
+	monster->armorClass *= 2;
 	monster->uniqueMonsterTRN = std::make_unique<uint8_t[]>(256);
 	std::copy(LightTables[4].begin(), LightTables[4].end(), monster->uniqueMonsterTRN.get());
 	monster->whoHit = 0;
@@ -4889,7 +4896,7 @@ unsigned int Monster::toHit(_difficulty difficulty) const
 		baseToHit += HellToHitBonus;
 	}
 
-	return baseToHit;
+	return isRaisedUndead ? 2 * baseToHit : baseToHit;
 }
 
 unsigned int Monster::toHitSpecial(_difficulty difficulty) const
@@ -4905,7 +4912,7 @@ unsigned int Monster::toHitSpecial(_difficulty difficulty) const
 		baseToHitSpecial += HellToHitBonus;
 	}
 
-	return baseToHitSpecial;
+	return isRaisedUndead ? 2 * baseToHitSpecial : baseToHitSpecial;
 }
 
 } // namespace devilution
