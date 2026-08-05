@@ -178,3 +178,19 @@ TEST(Player, CreatePlayer)
 	CreatePlayer(Players[0], HeroClass::Rogue);
 	AssertPlayer(Players[0]);
 }
+
+TEST(Player, CreateNecromancer)
+{
+	Players.resize(1);
+	CreatePlayer(Players[0], HeroClass::Necromancer);
+
+	const devilution::Player &player = Players[0];
+	EXPECT_EQ(player._pClass, HeroClass::Necromancer);
+	EXPECT_EQ(player._pBaseStr, 15);
+	EXPECT_EQ(player._pBaseMag, 40);
+	EXPECT_EQ(player._pBaseDex, 15);
+	EXPECT_EQ(player._pBaseVit, 15);
+	EXPECT_EQ(player._pRSpell, SpellID::Firebolt);
+	EXPECT_EQ(player._pRSplType, SpellType::Spell);
+	EXPECT_EQ(player._pSplLvl[static_cast<int8_t>(SpellID::Firebolt)], 2);
+}

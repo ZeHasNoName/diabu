@@ -3034,6 +3034,7 @@ void CreatePlrItems(Player &player)
 		GenerateNewSeed(player.SpdList[1]);
 		break;
 	case HeroClass::Sorcerer:
+	case HeroClass::Necromancer:
 		InitializeItem(player.InvBody[INVLOC_HAND_LEFT], gbIsHellfire ? IDI_SORCERER : IDI_SORCERER_DIABLO);
 		GenerateNewSeed(player.InvBody[INVLOC_HAND_LEFT]);
 
@@ -4437,6 +4438,7 @@ void SpawnBoy(int lvl)
 					ivalue = INT_MAX;
 				break;
 			case HeroClass::Sorcerer:
+			case HeroClass::Necromancer:
 				if (IsAnyOf(itemType, ItemType::Staff, ItemType::Axe, ItemType::Bow, ItemType::Mace))
 					ivalue = INT_MAX;
 				break;

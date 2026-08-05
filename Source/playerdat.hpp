@@ -135,7 +135,8 @@ struct PlayerAnimData {
 	int8_t castingActionFrame;
 };
 
-extern const _sfx_id herosounds[enum_size<HeroClass>::value][enum_size<HeroSpeech>::value];
+extern const _sfx_id herosounds[static_cast<size_t>(HeroClass::Necromancer)][enum_size<HeroSpeech>::value];
+const _sfx_id *GetHeroSounds(HeroClass heroClass);
 extern const uint32_t ExpLvlsTbl[MaxCharacterLevel];
 extern const PlayerData PlayersData[];
 extern const PlayerSpriteData PlayersSpriteData[];

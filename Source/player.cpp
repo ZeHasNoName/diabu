@@ -1548,6 +1548,8 @@ void CheckCheatStats(Player &player)
 
 HeroClass GetPlayerSpriteClass(HeroClass cls)
 {
+	if (cls == HeroClass::Necromancer)
+		return HeroClass::Sorcerer;
 	if (cls == HeroClass::Bard && !gbBard)
 		return HeroClass::Rogue;
 	if (cls == HeroClass::Barbarian && !gbBarbarian)
@@ -1770,7 +1772,7 @@ bool Player::IsPositionInPath(Point pos)
 
 void Player::Say(HeroSpeech speechId) const
 {
-	_sfx_id soundEffect = herosounds[static_cast<size_t>(_pClass)][static_cast<size_t>(speechId)];
+	_sfx_id soundEffect = GetHeroSounds(_pClass)[static_cast<size_t>(speechId)];
 
 	if (soundEffect == SFX_NONE)
 		return;
@@ -1780,7 +1782,7 @@ void Player::Say(HeroSpeech speechId) const
 
 void Player::SaySpecific(HeroSpeech speechId) const
 {
-	_sfx_id soundEffect = herosounds[static_cast<size_t>(_pClass)][static_cast<size_t>(speechId)];
+	_sfx_id soundEffect = GetHeroSounds(_pClass)[static_cast<size_t>(speechId)];
 
 	if (soundEffect == SFX_NONE || effect_is_playing(soundEffect))
 		return;
@@ -1791,7 +1793,7 @@ void Player::SaySpecific(HeroSpeech speechId) const
 void Player::Say(HeroSpeech speechId, int delay) const
 {
 	sfxdelay = delay;
-	sfxdnum = herosounds[static_cast<size_t>(_pClass)][static_cast<size_t>(speechId)];
+	sfxdnum = GetHeroSounds(_pClass)[static_cast<size_t>(speechId)];
 }
 
 void Player::Stop()
@@ -1827,7 +1829,7 @@ void Player::RestorePartialMana()
 {
 	int wholeManaPoints = _pMaxMana >> 6;
 	int l = ((wholeManaPoints / 8) + GenerateRnd(wholeManaPoints / 4)) << 6;
-	if (_pClass == HeroClass::Sorcerer)
+	if (IsAnyOf(_pClass, HeroClass::Sorcerer, HeroClass::Necromancer))
 		l *= 2;
 	if (IsAnyOf(_pClass, HeroClass::Rogue, HeroClass::Monk, HeroClass::Bard))
 		l += l / 2;
@@ -2324,7 +2326,7 @@ void CreatePlayer(Player &player, HeroClass c)
 	player._pAblSpells = GetSpellBitmask(s);
 	player._pRSpell = s;
 
-	if (c == HeroClass::Sorcerer) {
+	if (IsAnyOf(c, HeroClass::Sorcerer, HeroClass::Necromancer)) {
 		player._pMemSpells = GetSpellBitmask(SpellID::Firebolt);
 		player._pRSplType = SpellType::Spell;
 		player._pRSpell = SpellID::Firebolt;
@@ -2338,7 +2340,7 @@ void CreatePlayer(Player &player, HeroClass c)
 
 	player._pSpellFlags = SpellFlag::None;
 
-	if (player._pClass == HeroClass::Sorcerer) {
+	if (IsAnyOf(player._pClass, HeroClass::Sorcerer, HeroClass::Necromancer)) {
 		player._pSplLvl[static_cast<int8_t>(SpellID::Firebolt)] = 2;
 	}
 
@@ -2356,6 +2358,7 @@ void CreatePlayer(Player &player, HeroClass c)
 		animWeaponId = PlayerWeaponGraphic::Bow;
 		break;
 	case HeroClass::Sorcerer:
+	case HeroClass::Necromancer:
 	case HeroClass::Monk:
 		animWeaponId = PlayerWeaponGraphic::Staff;
 		break;
@@ -2770,6 +2773,7 @@ StartPlayerKill(Player &player, DeathReason deathReason)
 				CopyUtf8(ear._iIName, player._pName, sizeof(ear._iIName));
 				switch (player._pClass) {
 				case HeroClass::Sorcerer:
+				case HeroClass::Necromancer:
 					ear._iCurs = ICURS_EAR_SORCERER;
 					break;
 				case HeroClass::Warrior:

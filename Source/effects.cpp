@@ -1175,6 +1175,7 @@ void sound_init()
 			mask |= sfx_ROGUE;
 			break;
 		case HeroClass::Sorcerer:
+		case HeroClass::Necromancer:
 			mask |= sfx_SORCERER;
 			break;
 		case HeroClass::Monk:

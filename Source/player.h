@@ -62,8 +62,9 @@ enum class HeroClass : uint8_t {
 	Monk,
 	Bard,
 	Barbarian,
+	Necromancer,
 
-	LAST = Barbarian
+	LAST = Necromancer
 };
 
 enum class CharacterAttribute : uint8_t {
@@ -554,7 +555,7 @@ struct Player {
 	int GetMagicToHit() const
 	{
 		int hper = _pMagic + BaseHitChance;
-		if (_pClass == HeroClass::Sorcerer)
+		if (IsAnyOf(_pClass, HeroClass::Sorcerer, HeroClass::Necromancer))
 			hper += 20;
 		else if (_pClass == HeroClass::Bard)
 			hper += 10;

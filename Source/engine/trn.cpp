@@ -41,6 +41,7 @@ std::optional<std::array<uint8_t, 256>> GetClassTRN(Player &player)
 		path = "plrgfx\\rogue.trn";
 		break;
 	case HeroClass::Sorcerer:
+	case HeroClass::Necromancer:
 		path = "plrgfx\\sorcerer.trn";
 		break;
 	case HeroClass::Monk:

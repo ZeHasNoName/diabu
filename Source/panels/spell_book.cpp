@@ -110,6 +110,7 @@ SpellID GetSpellFromSpellPage(size_t page, size_t entry)
 		case HeroClass::Rogue:
 			return SpellID::TrapDisarm;
 		case HeroClass::Sorcerer:
+		case HeroClass::Necromancer:
 			return SpellID::StaffRecharge;
 		case HeroClass::Monk:
 			return SpellID::Search;
