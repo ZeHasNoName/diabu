@@ -1335,7 +1335,7 @@ void SpellBookMove(AxisDirection dir)
 		if (sbooktab > 0)
 			sbooktab--;
 	} else if (dir.x == AxisDirectionX_RIGHT) {
-		if ((gbIsHellfire && sbooktab < 4) || (!gbIsHellfire && sbooktab < 3))
+		if (sbooktab < 5)
 			sbooktab++;
 	}
 }

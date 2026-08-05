@@ -1,5 +1,6 @@
 #include "panels/spell_book.hpp"
 
+#include <algorithm>
 #include <cstdint>
 
 #include <fmt/format.h>
@@ -11,6 +12,7 @@
 #include "engine/load_clx.hpp"
 #include "engine/rectangle.hpp"
 #include "engine/render/clx_render.hpp"
+#include "engine/render/primitive_render.hpp"
 #include "engine/render/text_render.hpp"
 #include "init.h"
 #include "missiles.h"
@@ -30,20 +32,77 @@ OptionalOwnedClxSpriteList pSpellBkCel;
 
 const size_t SpellBookPages = 6;
 const size_t SpellBookPageEntries = 7;
+constexpr int SpellBookTabsWidth = 305;
+constexpr int SpellBookTabsHeight = 29;
+constexpr Point SpellBookTabsPosition { 7, 320 };
 
 /** Maps from spellbook page number and position to SpellID. */
 const SpellID SpellPages[SpellBookPages][SpellBookPageEntries] = {
-	{ SpellID::Null, SpellID::Firebolt, SpellID::ChargedBolt, SpellID::HolyBolt, SpellID::Healing, SpellID::HealOther, SpellID::Inferno },
-	{ SpellID::Resurrect, SpellID::FireWall, SpellID::Telekinesis, SpellID::Lightning, SpellID::TownPortal, SpellID::Flash, SpellID::StoneCurse },
-	{ SpellID::Phasing, SpellID::ManaShield, SpellID::Elemental, SpellID::Fireball, SpellID::FlameWave, SpellID::ChainLightning, SpellID::Guardian },
-	{ SpellID::Nova, SpellID::Golem, SpellID::Teleport, SpellID::Apocalypse, SpellID::BoneSpirit, SpellID::BloodStar, SpellID::Etherealize },
-	{ SpellID::LightningWall, SpellID::Immolation, SpellID::Warp, SpellID::Reflect, SpellID::Berserk, SpellID::RingOfFire, SpellID::Search },
+	// Miscellaneous skills and utility spells.
+	{ SpellID::Null, SpellID::Healing, SpellID::HealOther, SpellID::Resurrect, SpellID::TownPortal, SpellID::Telekinesis, SpellID::Search },
+	// Fire spells.
+	{ SpellID::Firebolt, SpellID::Inferno, SpellID::FireWall, SpellID::Elemental, SpellID::Fireball, SpellID::FlameWave, SpellID::Guardian },
+	// Advanced fire spells and thematically related destructive magic.
+	{ SpellID::Golem, SpellID::Apocalypse, SpellID::Immolation, SpellID::RingOfFire, SpellID::BloodStar, SpellID::BoneSpirit, SpellID::StoneCurse },
+	// Lightning spells, with Mana Shield and Nova filling the remaining slots.
+	{ SpellID::ChargedBolt, SpellID::Lightning, SpellID::Flash, SpellID::ChainLightning, SpellID::LightningWall, SpellID::ManaShield, SpellID::Nova },
+	// Magic spells.
+	{ SpellID::HolyBolt, SpellID::Phasing, SpellID::Teleport, SpellID::Etherealize, SpellID::Warp, SpellID::Reflect, SpellID::Berserk },
+	// Reserved for mod spells.
 	{ SpellID::Invalid, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid }
 };
 
+void DrawSpellBookTabs(const Surface &out)
+{
+	const int sourceTabCount = gbIsHellfire ? 5 : 4;
+	const int sourceTabWidth = gbIsHellfire ? 61 : 76;
+	const Point tabsPosition = GetPanelPosition(UiPanels::Spell, SpellBookTabsPosition);
+
+	// The original background contains four or five tabs. Compress those tabs and
+	// repeat the final one so all six pages have an equally sized button.
+	OwnedSurface originalTabs(SpellBookTabsWidth, SpellBookTabsHeight);
+	originalTabs.BlitFrom(out, MakeSdlRect(tabsPosition.x, tabsPosition.y, SpellBookTabsWidth, SpellBookTabsHeight), { 0, 0 });
+	for (int tab = 0; tab < static_cast<int>(SpellBookPages); ++tab) {
+		const int destinationBegin = tab * SpellBookTabsWidth / SpellBookPages;
+		const int destinationEnd = (tab + 1) * SpellBookTabsWidth / SpellBookPages;
+		const int sourceTab = std::min(tab, sourceTabCount - 1);
+		for (int y = 0; y < SpellBookTabsHeight; ++y) {
+			for (int x = destinationBegin; x < destinationEnd; ++x) {
+				const int sourceX = sourceTab * sourceTabWidth
+				    + (x - destinationBegin) * sourceTabWidth / (destinationEnd - destinationBegin);
+				out[tabsPosition + Displacement { x, y }] = originalTabs[{ sourceX, y }];
+			}
+		}
+	}
+
+	const ClxSprite selectedTab = (*pSBkBtnCel)[std::min(sbooktab, sourceTabCount - 1)];
+	OwnedSurface originalSelectedTab(sourceTabWidth, selectedTab.height());
+	ClxDraw(originalSelectedTab, { 0, selectedTab.height() - 1 }, selectedTab);
+	const int destinationBegin = sbooktab * SpellBookTabsWidth / SpellBookPages;
+	const int destinationEnd = (sbooktab + 1) * SpellBookTabsWidth / SpellBookPages;
+	for (int y = 0; y < selectedTab.height(); ++y) {
+		for (int x = destinationBegin; x < destinationEnd; ++x) {
+			const uint8_t color = originalSelectedTab[{ (x - destinationBegin) * sourceTabWidth / (destinationEnd - destinationBegin), y }];
+			if (color != 0)
+				out[tabsPosition + Displacement { x, y }] = color;
+		}
+	}
+
+	// The sixth button reuses the fifth source tab, so replace its original numeral.
+	const int modTabBegin = (SpellBookPages - 1) * SpellBookTabsWidth / SpellBookPages;
+	const int modTabEnd = SpellBookTabsWidth;
+	const Rectangle modTabLabel {
+		tabsPosition + Displacement { modTabBegin, 4 },
+		Size { modTabEnd - modTabBegin, SpellBookTabsHeight - 8 }
+	};
+	DrawHalfTransparentRectTo(out, modTabLabel.position.x + modTabLabel.size.width / 2 - 5, modTabLabel.position.y + 3, 10, modTabLabel.size.height - 6);
+	DrawHalfTransparentRectTo(out, modTabLabel.position.x + modTabLabel.size.width / 2 - 5, modTabLabel.position.y + 3, 10, modTabLabel.size.height - 6);
+	DrawString(out, "6", modTabLabel, { UiFlags::ColorGold | UiFlags::AlignCenter | UiFlags::VerticalCenter });
+}
+
 SpellID GetSpellFromSpellPage(size_t page, size_t entry)
 {
-	assert(page <= SpellBookPages && entry <= SpellBookPageEntries);
+	assert(page < SpellBookPages && entry < SpellBookPageEntries);
 	if (page == 0 && entry == 0) {
 		switch (InspectPlayer->_pClass) {
 		case HeroClass::Warrior:
@@ -121,16 +180,7 @@ void FreeSpellBook()
 void DrawSpellBook(const Surface &out)
 {
 	ClxDraw(out, GetPanelPosition(UiPanels::Spell, { 0, 351 }), (*pSpellBkCel)[0]);
-	if (gbIsHellfire && sbooktab < 5) {
-		ClxDraw(out, GetPanelPosition(UiPanels::Spell, { 61 * sbooktab + 7, 348 }), (*pSBkBtnCel)[sbooktab]);
-	} else {
-		// BUGFIX: rendering of page 3 and page 4 buttons are both off-by-one pixel (fixed).
-		int sx = 76 * sbooktab + 7;
-		if (sbooktab == 2 || sbooktab == 3) {
-			sx++;
-		}
-		ClxDraw(out, GetPanelPosition(UiPanels::Spell, { sx, 348 }), (*pSBkBtnCel)[sbooktab]);
-	}
+	DrawSpellBookTabs(out);
 	Player &player = *InspectPlayer;
 	uint64_t spl = player._pMemSpells | player._pISpells | player._pAblSpells;
 
@@ -217,20 +267,12 @@ void CheckSBook()
 		return;
 	}
 
-	// The width of the panel excluding the border is 305 pixels. This does not cleanly divide by 4 meaning Diablo tabs
-	// end up with an extra pixel somewhere around the buttons. Vanilla Diablo had the buttons left-aligned, devilutionX
-	// instead justifies the buttons and puts the gap between buttons 2/3. See DrawSpellBook
-	const int TabWidth = gbIsHellfire ? 61 : 76;
-	// Tabs are drawn in a row near the bottom of the panel
-	Rectangle tabArea = { GetPanelPosition(UiPanels::Spell, { 7, 320 }), Size { 305, 29 } };
+	// Tabs are drawn in a row near the bottom of the panel. Integer division distributes
+	// the spare pixel across the six buttons in the same way as DrawSpellBookTabs().
+	Rectangle tabArea = { GetPanelPosition(UiPanels::Spell, SpellBookTabsPosition), Size { SpellBookTabsWidth, SpellBookTabsHeight } };
 	if (tabArea.contains(MousePosition)) {
-		int hitColumn = MousePosition.x - tabArea.position.x;
-		// Clicking on the gutter currently activates tab 3. Could make it do nothing by checking for == here and return early.
-		if (!gbIsHellfire && hitColumn > TabWidth * 2) {
-			// Subtract 1 pixel to account for the gutter between buttons 2/3
-			hitColumn--;
-		}
-		sbooktab = hitColumn / TabWidth;
+		const int hitColumn = MousePosition.x - tabArea.position.x;
+		sbooktab = hitColumn * SpellBookPages / SpellBookTabsWidth;
 	}
 }
 
