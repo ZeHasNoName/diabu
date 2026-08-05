@@ -225,6 +225,15 @@ void StartAttack(Player &player, Direction d, bool includesFirstFrame)
 		}
 	}
 
+	const auto weaponGraphic = static_cast<PlayerWeaponGraphic>(player._pgfxnum & 0xFU);
+	if (player._pClass == HeroClass::Necromancer) {
+		if (IsAnyOf(weaponGraphic, PlayerWeaponGraphic::Sword)) {
+			skippedAnimationFrames += 2;
+		} else if (IsAnyOf(weaponGraphic, PlayerWeaponGraphic::Axe)) {
+			++skippedAnimationFrames;
+		}
+	}
+
 	auto animationFlags = AnimationDistributionFlags::ProcessAnimationPending;
 	if (player._pmode == PM_ATTACK)
 		animationFlags = static_cast<AnimationDistributionFlags>(animationFlags | AnimationDistributionFlags::RepeatedAction);
