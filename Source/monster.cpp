@@ -63,7 +63,7 @@ bool sgbSaveSoundOn;
 namespace {
 
 constexpr unsigned RaisedUndeadLevelsPerMinion = 4;
-constexpr unsigned RaisedUndeadFollowDistance = 6;
+constexpr unsigned RaisedUndeadFollowDistance = 8;
 
 constexpr int NightmareToHitBonus = 85;
 constexpr int HellToHitBonus = 120;
@@ -3665,15 +3665,25 @@ RaiseUndeadResult RaiseMonsterFromCorpse(Player &owner, Point corpsePosition)
 	if (!corpse->canRaise)
 		return RaiseUndeadResult::IneligibleCorpse;
 
-	const int ownerId = owner.getId();
-	if (GetRaisedUndeadCount(owner) >= GetRaisedUndeadLimit(owner))
-		return RaiseUndeadResult::MinionLimitReached;
 	if (!IsTileAvailable(corpsePosition))
 		return RaiseUndeadResult::NoRoom;
 
 	const size_t typeIndex = GetMonsterTypeIndex(corpse->monsterType);
 	if (typeIndex == LevelMonsterTypeCount)
 		return RaiseUndeadResult::IneligibleCorpse;
+	if (ActiveMonsterCount >= MaxMonsters)
+		return RaiseUndeadResult::NoRoom;
+
+	const int ownerId = owner.getId();
+	if (GetRaisedUndeadCount(owner) >= GetRaisedUndeadLimit(owner)) {
+		for (size_t i = 0; i < ActiveMonsterCount; i++) {
+			Monster &oldMinion = Monsters[ActiveMonsters[i]];
+			if (oldMinion.isRaisedUndead && oldMinion.minionOwner == ownerId && oldMinion.hitPoints > 0) {
+				M_StartKill(oldMinion, owner);
+				break;
+			}
+		}
+	}
 
 	Monster *monster = AddMonster(corpsePosition, owner._pdir, typeIndex, true);
 	if (monster == nullptr)
