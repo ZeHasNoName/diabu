@@ -6,6 +6,9 @@
 #include "gamemenu.h"
 
 #include "cursor.h"
+#ifdef _DEBUG
+#include "debug.h"
+#endif
 #include "engine/backbuffer_state.hpp"
 #include "engine/events.hpp"
 #include "engine/sound.h"
@@ -31,6 +34,16 @@ void GamemenuMusicVolume(bool bActivate);
 void GamemenuSoundVolume(bool bActivate);
 void GamemenuGamma(bool bActivate);
 void GamemenuSpeed(bool bActivate);
+#ifdef _DEBUG
+void GamemenuDebug(bool bActivate);
+void GamemenuDebugMaxStats(bool bActivate);
+void GamemenuDebugNextLevel(bool bActivate);
+void GamemenuDebugMaxLevel(bool bActivate);
+void GamemenuDebugLearnSpells(bool bActivate);
+void GamemenuDebugForgetSpells(bool bActivate);
+void GamemenuDebugFill(bool bActivate);
+void GamemenuDebugPrevious(bool bActivate);
+#endif
 
 /** Contains the game menu items of the single player menu. */
 TMenuItem sgSingleMenu[] = {
@@ -38,6 +51,9 @@ TMenuItem sgSingleMenu[] = {
 	// dwFlags,      pszStr,          fnMenu
 	{ GMENU_ENABLED, N_("Save Game"), &gamemenu_save_game },
 	{ GMENU_ENABLED, N_("Options"),   &GamemenuOptions    },
+#ifdef _DEBUG
+	{ GMENU_ENABLED, "Debug",        &GamemenuDebug      },
+#endif
 	{ GMENU_ENABLED, N_("New Game"),  &GamemenuNewGame    },
 	{ GMENU_ENABLED, N_("Load Game"), &gamemenu_load_game },
 	{ GMENU_ENABLED, N_("Quit Game"), &gamemenu_quit_game },
@@ -49,6 +65,9 @@ TMenuItem sgMultiMenu[] = {
 	// clang-format off
 	// dwFlags,      pszStr,                fnMenu
 	{ GMENU_ENABLED, N_("Options"),         &GamemenuOptions     },
+#ifdef _DEBUG
+	{ GMENU_ENABLED, "Debug",               &GamemenuDebug       },
+#endif
 	{ GMENU_ENABLED, N_("New Game"),        &GamemenuNewGame     },
 	{ GMENU_ENABLED, N_("Restart In Town"), &GamemenuRestartTown },
 	{ GMENU_ENABLED, N_("Quit Game"),       &gamemenu_quit_game  },
@@ -66,6 +85,20 @@ TMenuItem sgOptionsMenu[] = {
 	{ GMENU_ENABLED               , nullptr,             nullptr               },
 	// clang-format on
 };
+#ifdef _DEBUG
+TMenuItem sgDebugMenu[] = {
+	// clang-format off
+	{ GMENU_ENABLED,                "Max Stats",            &GamemenuDebugMaxStats     },
+	{ GMENU_ENABLED,                "Next Level",           &GamemenuDebugNextLevel    },
+	{ GMENU_ENABLED,                "Max Level",            &GamemenuDebugMaxLevel     },
+	{ GMENU_ENABLED,                "Learn All Spells",     &GamemenuDebugLearnSpells  },
+	{ GMENU_ENABLED,                "Forget All Spells",    &GamemenuDebugForgetSpells },
+	{ GMENU_ENABLED,                "Refill Life and Mana", &GamemenuDebugFill         },
+	{ GMENU_ENABLED,                N_("Previous Menu"),    &GamemenuDebugPrevious     },
+	{ GMENU_ENABLED,                nullptr,                 nullptr                    },
+	// clang-format on
+};
+#endif
 /** Specifies the menu names for music enabled and disabled. */
 const char *const MusicToggleNames[] = {
 	N_("Music"),
@@ -79,7 +112,11 @@ const char *const SoundToggleNames[] = {
 
 void GamemenuUpdateSingle()
 {
+#ifdef _DEBUG
+	sgSingleMenu[4].setEnabled(gbValidSaveFile);
+#else
 	sgSingleMenu[3].setEnabled(gbValidSaveFile);
+#endif
 
 	bool enable = MyPlayer->_pmode != PM_DEATH && !MyPlayerIsDead;
 
@@ -88,13 +125,59 @@ void GamemenuUpdateSingle()
 
 void GamemenuUpdateMulti()
 {
+#ifdef _DEBUG
+	sgMultiMenu[3].setEnabled(MyPlayerIsDead);
+#else
 	sgMultiMenu[2].setEnabled(MyPlayerIsDead);
+#endif
 }
 
 void GamemenuPrevious(bool /*bActivate*/)
 {
 	gamemenu_on();
 }
+
+#ifdef _DEBUG
+void GamemenuDebug(bool /*bActivate*/)
+{
+	gmenu_set_items(sgDebugMenu, nullptr);
+}
+
+void GamemenuDebugMaxStats(bool /*bActivate*/)
+{
+	CheckDebugTextCommand("maxstats");
+}
+
+void GamemenuDebugNextLevel(bool /*bActivate*/)
+{
+	CheckDebugTextCommand("givexp");
+}
+
+void GamemenuDebugMaxLevel(bool /*bActivate*/)
+{
+	CheckDebugTextCommand("givexp 50");
+}
+
+void GamemenuDebugLearnSpells(bool /*bActivate*/)
+{
+	CheckDebugTextCommand("setspells 15");
+}
+
+void GamemenuDebugForgetSpells(bool /*bActivate*/)
+{
+	CheckDebugTextCommand("setspells 0");
+}
+
+void GamemenuDebugFill(bool /*bActivate*/)
+{
+	CheckDebugTextCommand("fill");
+}
+
+void GamemenuDebugPrevious(bool /*bActivate*/)
+{
+	gamemenu_on();
+}
+#endif
 
 void GamemenuNewGame(bool /*bActivate*/)
 {

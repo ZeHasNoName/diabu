@@ -2,6 +2,13 @@
 
 If you compile the game in debug, you have multiple debug features available.
 
+## Debug menu
+
+Open the in-game menu and select `Debug`. The debug submenu provides actions to
+maximize character stats, gain one level, advance to the maximum level, learn
+or forget all book-learnable spells, and refill life and mana. Maximum stats
+respect the selected class's normal stat caps.
+
 ## Debug commands
 
 In-game you have the possibility to use the chat to trigger debug commands.
