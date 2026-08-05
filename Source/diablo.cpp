@@ -870,6 +870,12 @@ void RunGameLoop(interface_mode uMsg)
 		if (!gbRunGame)
 			break;
 
+		constexpr uint8_t MaxTickRate = 100;
+		if (!gbIsMultiplayer && !demo::IsRunning()) {
+			const bool maxGameSpeed = (SDL_GetModState() & KMOD_ALT) != 0;
+			gnTickDelay = 1000 / (maxGameSpeed ? MaxTickRate : sgGameInitInfo.nTickRate);
+		}
+
 		bool drawGame = true;
 		bool processInput = true;
 		bool runGameLoop = demo::IsRunning() ? demo::GetRunGameLoop(drawGame, processInput) : nthread_has_500ms_passed(&drawGame);

@@ -62,7 +62,7 @@ bool sgbSaveSoundOn;
 
 namespace {
 
-constexpr unsigned RaisedUndeadLevelsPerMinion = 4;
+constexpr unsigned RaisedUndeadLevelsPerMinion = 5;
 constexpr unsigned RaisedUndeadFollowDistance = 8;
 
 constexpr int NightmareToHitBonus = 85;
@@ -3722,7 +3722,7 @@ unsigned GetRaisedUndeadCount(const Player &owner)
 
 unsigned GetRaisedUndeadLimit(const Player &owner)
 {
-	return std::max(1U, static_cast<unsigned>(owner._pLevel) / RaisedUndeadLevelsPerMinion);
+	return 1 + static_cast<unsigned>(owner._pLevel) / RaisedUndeadLevelsPerMinion;
 }
 
 void AddDoppelganger(Monster &monster)
