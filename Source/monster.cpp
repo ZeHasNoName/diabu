@@ -63,7 +63,7 @@ bool sgbSaveSoundOn;
 namespace {
 
 constexpr unsigned RaisedUndeadLevelsPerMinion = 4;
-constexpr unsigned RaisedUndeadFollowDistance = 10;
+constexpr unsigned RaisedUndeadFollowDistance = 3;
 
 constexpr int NightmareToHitBonus = 85;
 constexpr int HellToHitBonus = 120;
