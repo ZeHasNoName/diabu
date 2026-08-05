@@ -49,7 +49,7 @@ const SpellID SpellPages[SpellBookPages][SpellBookPageEntries] = {
 	// Magic spells.
 	{ SpellID::HolyBolt, SpellID::Phasing, SpellID::Teleport, SpellID::Etherealize, SpellID::Warp, SpellID::Reflect, SpellID::Berserk },
 	// Reserved for mod spells.
-	{ SpellID::Invalid, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid }
+	{ SpellID::HolyNova, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid, SpellID::Invalid }
 };
 
 void DrawSpellBookTabs(const Surface &out)

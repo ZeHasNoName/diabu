@@ -72,6 +72,7 @@ const SpellData SpellsData[] = {
 /*SpellID::RuneOfNova*/       { P_("spell", "Rune of Nova"),       IS_CAST8,         800,           30,        255, Magic | Targeted,             -1,         -1,      48, { MissileID::RuneOfNova,           MissileID::Null,    },         1,        10,         40,         80 },
 /*SpellID::RuneOfImmolation*/ { P_("spell", "Rune of Immolation"), IS_CAST8,         800,           30,        255, Magic | Targeted,             -1,         -1,      48, { MissileID::RuneOfImmolation,     MissileID::Null,    },         1,        10,         40,         80 },
 /*SpellID::RuneOfStone*/      { P_("spell", "Rune of Stone"),      IS_CAST8,         800,           30,        255, Magic | Targeted,             -1,         -1,      48, { MissileID::RuneOfStone,          MissileID::Null,    },         1,        10,         40,         80 },
+/*SpellID::HolyNova*/         { P_("spell", "Holy Nova"),         IS_CAST2,        2100,          130,         60, Magic,                        14,         10,      87, { MissileID::HolyNova,             MissileID::Null,    },         3,        35,         16,         32 },
 	// clang-format on
 };
 

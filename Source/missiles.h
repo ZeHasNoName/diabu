@@ -405,6 +405,7 @@ void ProcessRingOfFire(Missile &missile);
 void ProcessSearch(Missile &missile);
 void ProcessLightningWallControl(Missile &missile);
 void ProcessImmolation(Missile &missile);
+void ProcessHolyNova(Missile &missile);
 void ProcessSpectralArrow(Missile &missile);
 void ProcessLightningControl(Missile &missile);
 void ProcessLightning(Missile &missile);

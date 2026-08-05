@@ -893,6 +893,10 @@ void GetDamageAmt(SpellID i, int *mind, int *maxd)
 		*mind = myPlayer._pLevel + 9;
 		*maxd = *mind + 9;
 		break;
+	case SpellID::HolyNova:
+		*mind = 2 * (myPlayer._pLevel + 9);
+		*maxd = *mind + 18;
+		break;
 	case SpellID::BloodStar:
 		*mind = (myPlayer._pMagic / 2) + 3 * sl - (myPlayer._pMagic / 8);
 		*maxd = *mind;
@@ -2649,6 +2653,8 @@ void AddHolyBolt(Missile &missile, AddMissileParameter &parameter)
 	missile.var2 = missile.position.start.y;
 	missile._mlid = AddLight(missile.position.start, 8);
 	missile._midam = GenerateRnd(10) + player._pLevel + 9;
+	if (parameter.pParent != nullptr && parameter.pParent->_mitype == MissileID::HolyNova)
+		missile._midam *= 2;
 }
 
 void AddResurrect(Missile &missile, AddMissileParameter & /*parameter*/)
@@ -3253,6 +3259,11 @@ void ProcessNovaCommon(Missile &missile, MissileID projectileType)
 void ProcessImmolation(Missile &missile)
 {
 	ProcessNovaCommon(missile, MissileID::FireballBow);
+}
+
+void ProcessHolyNova(Missile &missile)
+{
+	ProcessNovaCommon(missile, MissileID::HolyBolt);
 }
 
 void ProcessNova(Missile &missile)

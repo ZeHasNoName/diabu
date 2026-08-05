@@ -1,5 +1,6 @@
 #include "panels/spell_icons.hpp"
 
+#include <array>
 #include <cstdint>
 
 #include "engine.h"
@@ -24,6 +25,24 @@ OptionalOwnedClxSpriteList SmallSpellIcons;
 OptionalOwnedClxSpriteList LargeSpellIcons;
 
 uint8_t SplTransTbl[256];
+
+const uint8_t *GetSpellIconTranslation(SpellID spell, std::array<uint8_t, 256> &translation)
+{
+	if (spell != SpellID::HolyNova)
+		return SplTransTbl;
+
+	for (size_t i = 0; i < translation.size(); ++i)
+		translation[i] = SplTransTbl[i];
+	for (uint8_t &color : translation) {
+		if (color >= PAL16_BLUE && color < PAL16_BLUE + 16)
+			color = PAL16_YELLOW + color - PAL16_BLUE;
+		else if (color >= PAL16_BEIGE && color < PAL16_BEIGE + 16)
+			color = PAL16_YELLOW + color - PAL16_BEIGE;
+		else if (color >= PAL16_ORANGE && color < PAL16_ORANGE + 16)
+			color = PAL16_YELLOW + color - PAL16_ORANGE;
+	}
+	return translation.data();
+}
 
 /** Maps from SpellID to spelicon.cel frame number. */
 const uint8_t SpellITbl[] = {
@@ -79,6 +98,7 @@ const uint8_t SpellITbl[] = {
 	34,
 	34,
 	34,
+	41,
 };
 
 } // namespace
@@ -134,7 +154,8 @@ void DrawLargeSpellIcon(const Surface &out, Point position, SpellID spell)
 #ifdef UNPACKED_MPQS
 	ClxDrawTRN(out, position, (*LargeSpellIconsBackground)[0], SplTransTbl);
 #endif
-	ClxDrawTRN(out, position, (*LargeSpellIcons)[SpellITbl[static_cast<int8_t>(spell)]], SplTransTbl);
+	std::array<uint8_t, 256> translation;
+	ClxDrawTRN(out, position, (*LargeSpellIcons)[SpellITbl[static_cast<int8_t>(spell)]], GetSpellIconTranslation(spell, translation));
 }
 
 void DrawSmallSpellIcon(const Surface &out, Point position, SpellID spell)
@@ -142,7 +163,8 @@ void DrawSmallSpellIcon(const Surface &out, Point position, SpellID spell)
 #ifdef UNPACKED_MPQS
 	ClxDrawTRN(out, position, (*SmallSpellIconsBackground)[0], SplTransTbl);
 #endif
-	ClxDrawTRN(out, position, (*SmallSpellIcons)[SpellITbl[static_cast<int8_t>(spell)]], SplTransTbl);
+	std::array<uint8_t, 256> translation;
+	ClxDrawTRN(out, position, (*SmallSpellIcons)[SpellITbl[static_cast<int8_t>(spell)]], GetSpellIconTranslation(spell, translation));
 }
 
 void DrawLargeSpellIconBorder(const Surface &out, Point position, uint8_t color)
