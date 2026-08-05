@@ -11,6 +11,7 @@
 #include "engine.h"
 #include "engine/clx_sprite.hpp"
 #include "engine/point.hpp"
+#include "monstdat.h"
 
 namespace devilution {
 
@@ -21,6 +22,9 @@ struct Corpse {
 	int frame;
 	uint16_t width;
 	uint8_t translationPaletteIndex;
+	_monster_id monsterType = MT_INVALID;
+	MonsterClass monsterClass = MonsterClass::Undead;
+	bool canRaise = false;
 
 	/**
 	 * @brief Returns the sprite list for a given direction.
@@ -39,6 +43,9 @@ extern int8_t stonendx;
 
 void InitCorpses();
 void AddCorpse(Point tilePosition, int8_t dv, Direction ddir);
+const Corpse *GetCorpseAt(Point tilePosition);
+bool IsCorpseRaiseable(Point tilePosition);
+void ConsumeCorpse(Point tilePosition);
 void MoveLightsToCorpses();
 
 } // namespace devilution

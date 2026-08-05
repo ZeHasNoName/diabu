@@ -99,7 +99,9 @@ const uint8_t SpellITbl[] = {
 	34,
 	34,
 	41,
+	24,
 };
+static_assert(std::size(SpellITbl) == MAX_SPELLS);
 
 } // namespace
 

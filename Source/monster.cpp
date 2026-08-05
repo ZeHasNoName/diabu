@@ -156,6 +156,8 @@ void InitMonster(Monster &monster, Direction rd, size_t typeIndex, Point positio
 	monster.rndItemSeed = AdvanceRndSeed();
 	monster.aiSeed = AdvanceRndSeed();
 	monster.whoHit = 0;
+	monster.minionOwner = -1;
+	monster.isRaisedUndead = false;
 	monster.minDamage = monster.data().minDamage;
 	monster.maxDamage = monster.data().maxDamage;
 	monster.minDamageSpecial = monster.data().minDamageSpecial;
@@ -651,13 +653,13 @@ void UpdateEnemy(Monster &monster)
 			continue;
 
 		const int dist = otherMonster.position.tile.WalkingDistance(position);
-		if (((monster.flags & MFLAG_GOLEM) == 0
+		if ((!isPlayerMinion
 		        && (monster.flags & MFLAG_BERSERK) == 0
 		        && dist >= 2
 		        && !IsRanged(monster))
-		    || ((monster.flags & MFLAG_GOLEM) == 0
+		    || (!isPlayerMinion
 		        && (monster.flags & MFLAG_BERSERK) == 0
-		        && (otherMonster.flags & MFLAG_GOLEM) == 0)) {
+		        && !otherMonster.isPlayerMinion())) {
 			continue;
 		}
 		const bool sameroom = dTransVal[position.x][position.y] == dTransVal[otherMonster.position.tile.x][otherMonster.position.tile.y];
@@ -677,6 +679,11 @@ void UpdateEnemy(Monster &monster)
 		monster.enemyPosition = target;
 	} else {
 		monster.flags |= MFLAG_NO_ENEMY;
+		if (isPlayerMinion && monster.minionOwner >= 0) {
+			monster.flags &= ~MFLAG_TARGETS_MONSTER;
+			monster.enemy = monster.minionOwner;
+			monster.enemyPosition = Players[monster.minionOwner].position.future;
+		}
 	}
 }
 
@@ -1095,7 +1102,8 @@ void MonsterAttackMonster(Monster &attacker, Monster &target, int hper, int mind
 	ApplyMonsterDamage(DamageType::Physical, target, dam);
 
 	if (attacker.isPlayerMinion()) {
-		int playerId = attacker.getId();
+		int playerId = attacker.minionOwner;
+		assert(playerId >= 0 && playerId < static_cast<int>(Players.size()));
 		const Player &player = Players[playerId];
 		target.tag(player);
 	}
@@ -3032,6 +3040,57 @@ void (*AiProc[])(Monster &monster) = {
 	/*MonsterAIID::BoneDemon*/ &AiRangedAvoidance
 };
 
+void RaisedUndeadAi(Monster &monster)
+{
+	if (monster.minionOwner < 0 || monster.minionOwner >= static_cast<int>(Players.size())) {
+		monster.isInvalid = true;
+		return;
+	}
+
+	const Player &owner = Players[monster.minionOwner];
+	if (!owner.plractive || !owner.isOnActiveLevel() || owner._pLvlChanging || owner._pHitPoints <= 0) {
+		monster.isInvalid = true;
+		return;
+	}
+	const unsigned distanceToOwner = monster.position.tile.WalkingDistance(owner.position.future);
+	if (distanceToOwner > 30) {
+		monster.isInvalid = true;
+		return;
+	}
+
+	if ((monster.flags & MFLAG_NO_ENEMY) != 0) {
+		UpdateEnemy(monster);
+	} else {
+		if ((monster.flags & MFLAG_TARGETS_MONSTER) == 0
+		    || monster.enemy < 0
+		    || monster.enemy >= MaxMonsters
+		    || Monsters[monster.enemy].hitPoints <= 0
+		    || Monsters[monster.enemy].isPlayerMinion()) {
+			UpdateEnemy(monster);
+		}
+	}
+	if ((monster.flags & MFLAG_NO_ENEMY) == 0 && monster.enemyPosition.WalkingDistance(monster.position.tile) > 20) {
+		monster.flags |= MFLAG_NO_ENEMY;
+		monster.flags &= ~MFLAG_TARGETS_MONSTER;
+		monster.enemy = monster.minionOwner;
+		monster.enemyPosition = owner.position.future;
+	}
+
+	if ((monster.flags & MFLAG_NO_ENEMY) == 0) {
+		if (IsRanged(monster))
+			AiRanged(monster);
+		else
+			AiAvoidance(monster);
+		return;
+	}
+
+	if (monster.mode != MonsterMode::Stand)
+		return;
+
+	if (distanceToOwner > 2)
+		RandomWalk(monster, GetDirection(monster.position.tile, owner.position.future));
+}
+
 bool IsRelativeMoveOK(const Monster &monster, Point position, Direction mdir)
 {
 	Point futurePosition = position + mdir;
@@ -3571,6 +3630,41 @@ Monster *AddMonster(Point position, Direction dir, size_t typeIndex, bool inMap)
 	return nullptr;
 }
 
+RaiseUndeadResult RaiseMonsterFromCorpse(Player &owner, Point corpsePosition)
+{
+	const Corpse *corpse = GetCorpseAt(corpsePosition);
+	if (corpse == nullptr)
+		return RaiseUndeadResult::NoCorpse;
+	if (!corpse->canRaise)
+		return RaiseUndeadResult::IneligibleCorpse;
+
+	const int ownerId = owner.getId();
+	for (size_t i = 0; i < ActiveMonsterCount; i++) {
+		const Monster &monster = Monsters[ActiveMonsters[i]];
+		if (monster.isRaisedUndead && monster.minionOwner == ownerId && monster.hitPoints > 0)
+			return RaiseUndeadResult::MinionLimitReached;
+	}
+	if (!IsTileAvailable(corpsePosition))
+		return RaiseUndeadResult::NoRoom;
+
+	const size_t typeIndex = GetMonsterTypeIndex(corpse->monsterType);
+	if (typeIndex == LevelMonsterTypeCount)
+		return RaiseUndeadResult::IneligibleCorpse;
+
+	Monster *monster = AddMonster(corpsePosition, owner._pdir, typeIndex, true);
+	if (monster == nullptr)
+		return RaiseUndeadResult::NoRoom;
+
+	monster->flags |= MFLAG_PLAYER_MINION;
+	monster->minionOwner = ownerId;
+	monster->isRaisedUndead = true;
+	monster->whoHit = 0;
+	monster->activeForTicks = UINT8_MAX;
+	UpdateEnemy(*monster);
+	ConsumeCorpse(corpsePosition);
+	return RaiseUndeadResult::Success;
+}
+
 void AddDoppelganger(Monster &monster)
 {
 	Point target = { 0, 0 };
@@ -4006,7 +4100,10 @@ void ProcessMonsters()
 		}
 		while (true) {
 			if ((monster.flags & MFLAG_SEARCH) == 0 || !AiPlanPath(monster)) {
-				AiProc[static_cast<int8_t>(monster.ai)](monster);
+				if (monster.isRaisedUndead)
+					RaisedUndeadAi(monster);
+				else
+					AiProc[static_cast<int8_t>(monster.ai)](monster);
 			}
 
 			if (!UpdateModeStance(monster))
@@ -4563,7 +4660,8 @@ void SpawnGolem(Player &player, Monster &golem, Point position, Missile &missile
 	golem.golemToHit = 5 * (missile._mispllvl + 8) + 2 * player._pLevel;
 	golem.minDamage = 2 * (missile._mispllvl + 4);
 	golem.maxDamage = 2 * (missile._mispllvl + 8);
-	golem.flags |= MFLAG_GOLEM;
+	golem.flags |= MFLAG_GOLEM | MFLAG_PLAYER_MINION;
+	golem.minionOwner = player.getId();
 	StartSpecialStand(golem, Direction::South);
 	UpdateEnemy(golem);
 	if (&player == MyPlayer) {
@@ -4690,7 +4788,7 @@ bool Monster::isResistant(MissileID missileType, DamageType missileElement) cons
 
 bool Monster::isPlayerMinion() const
 {
-	return (flags & MFLAG_GOLEM) != 0 && (flags & MFLAG_BERSERK) == 0;
+	return (flags & MFLAG_PLAYER_MINION) != 0 && (flags & MFLAG_BERSERK) == 0;
 }
 
 bool Monster::isPossibleToHit() const
@@ -4733,7 +4831,7 @@ MonsterMode Monster::getVisualMonsterMode() const
 
 unsigned int Monster::toHit(_difficulty difficulty) const
 {
-	if (isPlayerMinion())
+	if ((flags & MFLAG_GOLEM) != 0 && (flags & MFLAG_BERSERK) == 0)
 		return golemToHit;
 
 	unsigned int baseToHit = data().toHit;

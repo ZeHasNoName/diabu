@@ -2703,7 +2703,8 @@ void DeltaLoadLevel()
 					dMonster[monster.position.tile.x][monster.position.tile.y] = i + 1;
 				if (monster.type().type == MT_GOLEM) {
 					GolumAi(monster);
-					monster.flags |= (MFLAG_TARGETS_MONSTER | MFLAG_GOLEM);
+					monster.flags |= (MFLAG_TARGETS_MONSTER | MFLAG_GOLEM | MFLAG_PLAYER_MINION);
+					monster.minionOwner = static_cast<int8_t>(i);
 				} else {
 					M_StartStand(monster, monster.direction);
 				}

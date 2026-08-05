@@ -1,5 +1,7 @@
 #include "player_test.h"
 
+#include "spells.h"
+
 #include <gtest/gtest.h>
 
 using namespace devilution;
@@ -186,11 +188,13 @@ TEST(Player, CreateNecromancer)
 
 	const devilution::Player &player = Players[0];
 	EXPECT_EQ(player._pClass, HeroClass::Necromancer);
-	EXPECT_EQ(player._pBaseStr, 15);
-	EXPECT_EQ(player._pBaseMag, 40);
-	EXPECT_EQ(player._pBaseDex, 15);
-	EXPECT_EQ(player._pBaseVit, 15);
-	EXPECT_EQ(player._pRSpell, SpellID::Firebolt);
-	EXPECT_EQ(player._pRSplType, SpellType::Spell);
+	EXPECT_EQ(player._pBaseStr, 10);
+	EXPECT_EQ(player._pBaseMag, 30);
+	EXPECT_EQ(player._pBaseDex, 20);
+	EXPECT_EQ(player._pBaseVit, 10);
+	EXPECT_EQ(player._pRSpell, SpellID::RaiseUndead);
+	EXPECT_EQ(player._pRSplType, SpellType::Skill);
+	EXPECT_NE(player._pAblSpells & GetSpellBitmask(SpellID::RaiseUndead), 0);
+	EXPECT_NE(player._pMemSpells & GetSpellBitmask(SpellID::Firebolt), 0);
 	EXPECT_EQ(player._pSplLvl[static_cast<int8_t>(SpellID::Firebolt)], 2);
 }

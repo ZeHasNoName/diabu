@@ -13,7 +13,7 @@
 
 namespace devilution {
 
-#define MAX_SPELLS 53
+#define MAX_SPELLS 54
 
 enum class SpellType : uint8_t {
 	Skill,
@@ -81,8 +81,9 @@ enum class SpellID : int8_t {
 	RuneOfImmolation,
 	RuneOfStone,
 	HolyNova,
+	RaiseUndead,
 
-	LAST = HolyNova,
+	LAST = RaiseUndead,
 	Invalid = -1,
 };
 

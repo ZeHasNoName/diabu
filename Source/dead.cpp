@@ -29,6 +29,9 @@ void InitDeadAnimationFromMonster(Corpse &corpse, const CMonster &mon)
 	}
 	corpse.frame = animData.frames - 1;
 	corpse.width = animData.width;
+	corpse.monsterType = mon.type;
+	corpse.monsterClass = mon.data->monsterClass;
+	corpse.canRaise = mon.data->monsterClass == MonsterClass::Animal || mon.data->monsterClass == MonsterClass::Demon;
 }
 
 void MoveLightToCorpse(Monster &monster)
@@ -80,6 +83,7 @@ void InitCorpses()
 		if (monster.isUnique()) {
 			InitDeadAnimationFromMonster(Corpses[nd], monster.type());
 			Corpses[nd].translationPaletteIndex = ActiveMonsters[i] + 1;
+			Corpses[nd].canRaise = false;
 			nd++;
 
 			monster.corpseId = nd;
@@ -92,6 +96,30 @@ void InitCorpses()
 void AddCorpse(Point tilePosition, int8_t dv, Direction ddir)
 {
 	dCorpse[tilePosition.x][tilePosition.y] = (dv & 0x1F) + (static_cast<int>(ddir) << 5);
+}
+
+const Corpse *GetCorpseAt(Point tilePosition)
+{
+	if (!InDungeonBounds(tilePosition))
+		return nullptr;
+
+	const int corpseId = dCorpse[tilePosition.x][tilePosition.y] & 0x1F;
+	if (corpseId == 0 || corpseId > MaxCorpses)
+		return nullptr;
+
+	return &Corpses[corpseId - 1];
+}
+
+bool IsCorpseRaiseable(Point tilePosition)
+{
+	const Corpse *corpse = GetCorpseAt(tilePosition);
+	return corpse != nullptr && corpse->canRaise;
+}
+
+void ConsumeCorpse(Point tilePosition)
+{
+	if (InDungeonBounds(tilePosition))
+		dCorpse[tilePosition.x][tilePosition.y] = 0;
 }
 
 void MoveLightsToCorpses()

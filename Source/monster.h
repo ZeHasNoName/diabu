@@ -40,6 +40,7 @@ enum monster_flag : uint16_t {
 	MFLAG_HIDDEN          = 1 << 0,
 	MFLAG_LOCK_ANIMATION  = 1 << 1,
 	MFLAG_ALLOW_SPECIAL   = 1 << 2,
+	MFLAG_PLAYER_MINION   = 1 << 3,
 	MFLAG_TARGETS_MONSTER = 1 << 4,
 	MFLAG_GOLEM           = 1 << 5,
 	MFLAG_QUEST_COMPLETE  = 1 << 6,
@@ -261,6 +262,9 @@ struct Monster { // note: missing field _mAFNum
 	uint8_t uniqTrans;
 	int8_t corpseId;
 	int8_t whoHit;
+	/** Player that owns this minion, or -1 when it is not player-owned. */
+	int8_t minionOwner;
+	bool isRaisedUndead;
 	uint8_t minDamage;
 	uint8_t maxDamage;
 	uint8_t minDamageSpecial;
@@ -472,6 +476,15 @@ void InitGolems();
 void InitMonsters();
 void SetMapMonsters(const uint16_t *dunData, Point startPosition);
 Monster *AddMonster(Point position, Direction dir, size_t mtype, bool inMap);
+enum class RaiseUndeadResult : uint8_t {
+	Success,
+	NoCorpse,
+	IneligibleCorpse,
+	MinionLimitReached,
+	NoRoom,
+};
+
+RaiseUndeadResult RaiseMonsterFromCorpse(Player &owner, Point corpsePosition);
 void AddDoppelganger(Monster &monster);
 void ApplyMonsterDamage(DamageType damageType, Monster &monster, int damage);
 bool M_Talker(const Monster &monster);

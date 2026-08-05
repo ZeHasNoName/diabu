@@ -13,9 +13,11 @@
 #include "engine/backbuffer_state.hpp"
 #include "engine/point.hpp"
 #include "engine/random.hpp"
+#include "error.h"
 #include "gamemenu.h"
 #include "inv.h"
 #include "missiles.h"
+#include "monster.h"
 
 namespace devilution {
 
@@ -211,6 +213,32 @@ SpellCheckResult CheckSpell(const Player &player, SpellID sn, SpellType st, bool
 void CastSpell(int id, SpellID spl, int sx, int sy, int dx, int dy, int spllvl)
 {
 	Player &player = Players[id];
+	if (spl == SpellID::RaiseUndead) {
+		const RaiseUndeadResult result = RaiseMonsterFromCorpse(player, { dx, dy });
+		if (result == RaiseUndeadResult::Success) {
+			AddMissile({ dx, dy }, { dx, dy }, Direction::South, MissileID::ResurrectBeam, TARGET_MONSTERS, id, 0, spllvl);
+			ConsumeSpell(player, spl);
+		} else if (&player == MyPlayer) {
+			switch (result) {
+			case RaiseUndeadResult::NoCorpse:
+				InitDiabloMsg(_("No corpse."));
+				break;
+			case RaiseUndeadResult::IneligibleCorpse:
+				InitDiabloMsg(_("That corpse cannot be raised."));
+				break;
+			case RaiseUndeadResult::MinionLimitReached:
+				InitDiabloMsg(_("You cannot control another minion."));
+				break;
+			case RaiseUndeadResult::NoRoom:
+				InitDiabloMsg(_("There is no room to raise it."));
+				break;
+			case RaiseUndeadResult::Success:
+				break;
+			}
+		}
+		return;
+	}
+
 	Direction dir = player._pdir;
 	if (IsWallSpell(spl)) {
 		dir = player.tempDirection;

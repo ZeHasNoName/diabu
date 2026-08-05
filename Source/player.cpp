@@ -2328,9 +2328,11 @@ void CreatePlayer(Player &player, HeroClass c)
 
 	if (IsAnyOf(c, HeroClass::Sorcerer, HeroClass::Necromancer)) {
 		player._pMemSpells = GetSpellBitmask(SpellID::Firebolt);
+	}
+	if (c == HeroClass::Sorcerer) {
 		player._pRSplType = SpellType::Spell;
 		player._pRSpell = SpellID::Firebolt;
-	} else {
+	} else if (c != HeroClass::Necromancer) {
 		player._pMemSpells = 0;
 	}
 
