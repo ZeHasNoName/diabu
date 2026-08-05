@@ -63,6 +63,7 @@ bool sgbSaveSoundOn;
 namespace {
 
 constexpr unsigned RaisedUndeadLevelsPerMinion = 4;
+constexpr unsigned RaisedUndeadFollowDistance = 10;
 
 constexpr int NightmareToHitBonus = 85;
 constexpr int HellToHitBonus = 120;
@@ -3045,6 +3046,22 @@ void (*AiProc[])(Monster &monster) = {
 	/*MonsterAIID::BoneDemon*/ &AiRangedAvoidance
 };
 
+bool UpdateRaisedUndeadFollowTarget(Monster &monster)
+{
+	if (!monster.isRaisedUndead || monster.minionOwner < 0 || monster.minionOwner >= static_cast<int>(Players.size()))
+		return false;
+
+	const Player &owner = Players[monster.minionOwner];
+	if (monster.position.tile.WalkingDistance(owner.position.future) <= RaisedUndeadFollowDistance)
+		return false;
+
+	monster.flags |= MFLAG_NO_ENEMY;
+	monster.flags &= ~MFLAG_TARGETS_MONSTER;
+	monster.enemy = monster.minionOwner;
+	monster.enemyPosition = owner.position.future;
+	return true;
+}
+
 void RaisedUndeadAi(Monster &monster)
 {
 	if (monster.minionOwner < 0 || monster.minionOwner >= static_cast<int>(Players.size())) {
@@ -3060,6 +3077,11 @@ void RaisedUndeadAi(Monster &monster)
 	const unsigned distanceToOwner = monster.position.tile.WalkingDistance(owner.position.future);
 	if (distanceToOwner > 30) {
 		monster.isInvalid = true;
+		return;
+	}
+	if (UpdateRaisedUndeadFollowTarget(monster)) {
+		if (monster.mode == MonsterMode::Stand)
+			RandomWalk(monster, GetDirection(monster.position.tile, owner.position.future));
 		return;
 	}
 
@@ -4119,6 +4141,7 @@ void ProcessMonsters()
 				monster.activeForTicks--;
 			}
 		}
+		UpdateRaisedUndeadFollowTarget(monster);
 		while (true) {
 			if ((monster.flags & MFLAG_SEARCH) == 0 || !AiPlanPath(monster)) {
 				if (monster.isRaisedUndead)
