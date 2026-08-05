@@ -365,13 +365,14 @@ bool IsTileOccupied(Point position)
 	return false;
 }
 
-int FindPath(tl::function_ref<bool(Point)> posOk, Point startPosition, Point destinationPosition, int8_t path[MaxPathLength])
+int FindPath(tl::function_ref<bool(Point)> posOk, Point startPosition, Point destinationPosition, int8_t path[], size_t maxPathLength)
 {
 	/**
 	 * for reconstructing the path after the A* search is done. The longest
 	 * possible path is actually 24 steps, even though we can fit 25
 	 */
-	static int8_t pnodeVals[MaxPathLength];
+	static int8_t pnodeVals[MaxExtendedPathLength];
+	assert(maxPathLength <= MaxExtendedPathLength);
 
 	// clear all nodes, create root nodes for the visited/frontier linked lists
 	gdwCurNodes = 0;
@@ -394,12 +395,12 @@ int FindPath(tl::function_ref<bool(Point)> posOk, Point startPosition, Point des
 			const PathNode *current = &PathNodes[nextNodeIndex];
 			size_t pathLength = 0;
 			while (current->parentIndex != PathNode::InvalidIndex) {
-				if (pathLength >= MaxPathLength)
+				if (pathLength >= maxPathLength)
 					break;
 				pnodeVals[pathLength++] = GetPathDirection(PathNodes[current->parentIndex].position(), current->position());
 				current = &PathNodes[current->parentIndex];
 			}
-			if (pathLength != MaxPathLength) {
+			if (pathLength != maxPathLength) {
 				size_t i;
 				for (i = 0; i < pathLength; i++)
 					path[i] = pnodeVals[pathLength - i - 1];

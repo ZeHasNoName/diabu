@@ -2326,14 +2326,11 @@ void CreatePlayer(Player &player, HeroClass c)
 	player._pAblSpells = GetSpellBitmask(s);
 	player._pRSpell = s;
 
-	if (IsAnyOf(c, HeroClass::Sorcerer, HeroClass::Necromancer)) {
-		player._pMemSpells = GetSpellBitmask(SpellID::Firebolt);
-	}
+	player._pMemSpells = 0;
 	if (c == HeroClass::Sorcerer) {
+		player._pMemSpells = GetSpellBitmask(SpellID::Firebolt);
 		player._pRSplType = SpellType::Spell;
 		player._pRSpell = SpellID::Firebolt;
-	} else if (c != HeroClass::Necromancer) {
-		player._pMemSpells = 0;
 	}
 
 	for (uint8_t &spellLevel : player._pSplLvl) {
@@ -2342,7 +2339,7 @@ void CreatePlayer(Player &player, HeroClass c)
 
 	player._pSpellFlags = SpellFlag::None;
 
-	if (IsAnyOf(player._pClass, HeroClass::Sorcerer, HeroClass::Necromancer)) {
+	if (player._pClass == HeroClass::Sorcerer) {
 		player._pSplLvl[static_cast<int8_t>(SpellID::Firebolt)] = 2;
 	}
 
@@ -2360,9 +2357,11 @@ void CreatePlayer(Player &player, HeroClass c)
 		animWeaponId = PlayerWeaponGraphic::Bow;
 		break;
 	case HeroClass::Sorcerer:
-	case HeroClass::Necromancer:
 	case HeroClass::Monk:
 		animWeaponId = PlayerWeaponGraphic::Staff;
+		break;
+	case HeroClass::Necromancer:
+		animWeaponId = PlayerWeaponGraphic::SwordShield;
 		break;
 	}
 	player._pgfxnum = static_cast<uint8_t>(animWeaponId);

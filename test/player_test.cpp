@@ -195,6 +195,7 @@ TEST(Player, CreateNecromancer)
 	EXPECT_EQ(player._pRSpell, SpellID::RaiseUndead);
 	EXPECT_EQ(player._pRSplType, SpellType::Skill);
 	EXPECT_NE(player._pAblSpells & GetSpellBitmask(SpellID::RaiseUndead), 0);
-	EXPECT_NE(player._pMemSpells & GetSpellBitmask(SpellID::Firebolt), 0);
-	EXPECT_EQ(player._pSplLvl[static_cast<int8_t>(SpellID::Firebolt)], 2);
+	EXPECT_EQ(player._pMemSpells, 0);
+	EXPECT_EQ(player._pSplLvl[static_cast<int8_t>(SpellID::Firebolt)], 0);
+	EXPECT_EQ(player.InvBody[INVLOC_HAND_LEFT].IDidx, IDI_BARDDAGGER);
 }

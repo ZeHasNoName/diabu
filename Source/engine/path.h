@@ -18,6 +18,7 @@
 namespace devilution {
 
 constexpr size_t MaxPathLength = 25;
+constexpr size_t MaxExtendedPathLength = 50;
 
 bool IsTileNotSolid(Point position);
 bool IsTileSolid(Point position);
@@ -36,7 +37,7 @@ bool IsTileOccupied(Point position);
  * @brief Find the shortest path from startPosition to destinationPosition, using PosOk(Point) to check that each step is a valid position.
  * Store the step directions (corresponds to an index in PathDirs) in path, which must have room for 24 steps
  */
-int FindPath(tl::function_ref<bool(Point)> posOk, Point startPosition, Point destinationPosition, int8_t path[MaxPathLength]);
+int FindPath(tl::function_ref<bool(Point)> posOk, Point startPosition, Point destinationPosition, int8_t path[], size_t maxPathLength = MaxPathLength);
 
 /**
  * @brief check if stepping from a given position to a neighbouring tile cuts a corner.

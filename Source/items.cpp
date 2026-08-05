@@ -3034,7 +3034,6 @@ void CreatePlrItems(Player &player)
 		GenerateNewSeed(player.SpdList[1]);
 		break;
 	case HeroClass::Sorcerer:
-	case HeroClass::Necromancer:
 		InitializeItem(player.InvBody[INVLOC_HAND_LEFT], gbIsHellfire ? IDI_SORCERER : IDI_SORCERER_DIABLO);
 		GenerateNewSeed(player.InvBody[INVLOC_HAND_LEFT]);
 
@@ -3042,6 +3041,16 @@ void CreatePlrItems(Player &player)
 		GenerateNewSeed(player.SpdList[0]);
 
 		InitializeItem(player.SpdList[1], gbIsHellfire ? IDI_HEAL : IDI_MANA);
+		GenerateNewSeed(player.SpdList[1]);
+		break;
+	case HeroClass::Necromancer:
+		InitializeItem(player.InvBody[INVLOC_HAND_LEFT], IDI_BARDDAGGER);
+		GenerateNewSeed(player.InvBody[INVLOC_HAND_LEFT]);
+
+		InitializeItem(player.SpdList[0], IDI_HEAL);
+		GenerateNewSeed(player.SpdList[0]);
+
+		InitializeItem(player.SpdList[1], IDI_HEAL);
 		GenerateNewSeed(player.SpdList[1]);
 		break;
 

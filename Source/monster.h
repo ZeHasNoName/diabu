@@ -485,6 +485,8 @@ enum class RaiseUndeadResult : uint8_t {
 };
 
 RaiseUndeadResult RaiseMonsterFromCorpse(Player &owner, Point corpsePosition);
+unsigned GetRaisedUndeadCount(const Player &owner);
+unsigned GetRaisedUndeadLimit(const Player &owner);
 void AddDoppelganger(Monster &monster);
 void ApplyMonsterDamage(DamageType damageType, Monster &monster, int damage);
 bool M_Talker(const Monster &monster);

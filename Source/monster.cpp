@@ -62,6 +62,8 @@ bool sgbSaveSoundOn;
 
 namespace {
 
+constexpr unsigned RaisedUndeadLevelsPerMinion = 4;
+
 constexpr int NightmareToHitBonus = 85;
 constexpr int HellToHitBonus = 120;
 
@@ -1501,10 +1503,12 @@ void MonsterDeath(Monster &monster)
 		if (monster.var1 == 140)
 			PrepDoEnding();
 	} else if (monster.animInfo.isLastFrame()) {
-		if (monster.isUnique())
-			AddCorpse(monster.position.tile, monster.corpseId, monster.direction);
-		else
-			AddCorpse(monster.position.tile, monster.type().corpseId, monster.direction);
+		if (!monster.isRaisedUndead) {
+			if (monster.isUnique())
+				AddCorpse(monster.position.tile, monster.corpseId, monster.direction);
+			else
+				AddCorpse(monster.position.tile, monster.type().corpseId, monster.direction);
+		}
 
 		dMonster[monster.position.tile.x][monster.position.tile.y] = 0;
 		monster.isInvalid = true;
@@ -1725,12 +1729,13 @@ bool IsTileAccessible(const Monster &monster, Point position)
 
 bool AiPlanWalk(Monster &monster)
 {
-	int8_t path[MaxPathLength];
+	int8_t path[MaxExtendedPathLength];
 
 	/** Maps from walking path step to facing direction. */
 	const Direction plr2monst[9] = { Direction::South, Direction::NorthEast, Direction::NorthWest, Direction::SouthEast, Direction::SouthWest, Direction::North, Direction::East, Direction::South, Direction::West };
 
-	if (FindPath([&monster](Point position) { return IsTileAccessible(monster, position); }, monster.position.tile, monster.enemyPosition, path) == 0) {
+	const size_t maxPathLength = monster.isRaisedUndead ? MaxExtendedPathLength : MaxPathLength;
+	if (FindPath([&monster](Point position) { return IsTileAccessible(monster, position); }, monster.position.tile, monster.enemyPosition, path, maxPathLength) == 0) {
 		return false;
 	}
 
@@ -3639,11 +3644,8 @@ RaiseUndeadResult RaiseMonsterFromCorpse(Player &owner, Point corpsePosition)
 		return RaiseUndeadResult::IneligibleCorpse;
 
 	const int ownerId = owner.getId();
-	for (size_t i = 0; i < ActiveMonsterCount; i++) {
-		const Monster &monster = Monsters[ActiveMonsters[i]];
-		if (monster.isRaisedUndead && monster.minionOwner == ownerId && monster.hitPoints > 0)
-			return RaiseUndeadResult::MinionLimitReached;
-	}
+	if (GetRaisedUndeadCount(owner) >= GetRaisedUndeadLimit(owner))
+		return RaiseUndeadResult::MinionLimitReached;
 	if (!IsTileAvailable(corpsePosition))
 		return RaiseUndeadResult::NoRoom;
 
@@ -3655,14 +3657,33 @@ RaiseUndeadResult RaiseMonsterFromCorpse(Player &owner, Point corpsePosition)
 	if (monster == nullptr)
 		return RaiseUndeadResult::NoRoom;
 
-	monster->flags |= MFLAG_PLAYER_MINION;
+	monster->flags |= MFLAG_PLAYER_MINION | MFLAG_SEARCH;
 	monster->minionOwner = ownerId;
 	monster->isRaisedUndead = true;
+	monster->uniqueMonsterTRN = std::make_unique<uint8_t[]>(256);
+	std::copy(LightTables[4].begin(), LightTables[4].end(), monster->uniqueMonsterTRN.get());
 	monster->whoHit = 0;
 	monster->activeForTicks = UINT8_MAX;
 	UpdateEnemy(*monster);
 	ConsumeCorpse(corpsePosition);
 	return RaiseUndeadResult::Success;
+}
+
+unsigned GetRaisedUndeadCount(const Player &owner)
+{
+	const int ownerId = owner.getId();
+	unsigned count = 0;
+	for (size_t i = 0; i < ActiveMonsterCount; i++) {
+		const Monster &monster = Monsters[ActiveMonsters[i]];
+		if (monster.isRaisedUndead && monster.minionOwner == ownerId && monster.hitPoints > 0)
+			count++;
+	}
+	return count;
+}
+
+unsigned GetRaisedUndeadLimit(const Player &owner)
+{
+	return std::max(1U, static_cast<unsigned>(owner._pLevel) / RaisedUndeadLevelsPerMinion);
 }
 
 void AddDoppelganger(Monster &monster)

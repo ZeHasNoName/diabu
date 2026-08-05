@@ -16,6 +16,7 @@
 #include "engine/render/text_render.hpp"
 #include "init.h"
 #include "missiles.h"
+#include "monster.h"
 #include "panels/spell_icons.hpp"
 #include "panels/ui_panels.hpp"
 #include "player.h"
@@ -110,8 +111,9 @@ SpellID GetSpellFromSpellPage(size_t page, size_t entry)
 		case HeroClass::Rogue:
 			return SpellID::TrapDisarm;
 		case HeroClass::Sorcerer:
-		case HeroClass::Necromancer:
 			return SpellID::StaffRecharge;
+		case HeroClass::Necromancer:
+			return SpellID::RaiseUndead;
 		case HeroClass::Monk:
 			return SpellID::Search;
 		case HeroClass::Bard:
@@ -206,7 +208,11 @@ void DrawSpellBook(const Surface &out)
 			PrintSBookStr(out, line0, pgettext("spell", GetSpellData(sn).sNameText));
 			switch (GetSBookTrans(sn, false)) {
 			case SpellType::Skill:
-				PrintSBookStr(out, line1, _("Skill"));
+				if (sn == SpellID::RaiseUndead) {
+					PrintSBookStr(out, line1, fmt::format(fmt::runtime(_("Minions: {:d}/{:d}")), GetRaisedUndeadCount(player), GetRaisedUndeadLimit(player)));
+				} else {
+					PrintSBookStr(out, line1, _("Skill"));
+				}
 				break;
 			case SpellType::Charges: {
 				int charges = player.InvBody[INVLOC_HAND_LEFT]._iCharges;
