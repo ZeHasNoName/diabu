@@ -644,6 +644,17 @@ void LoadMonster(LoadHelper *file, Monster &monster, MonsterConversionData *mons
 	monster.intelligence = file->NextLE<uint8_t>();
 	file->Skip(2); // Alignment
 	monster.flags = file->NextLE<uint32_t>();
+	monster.minionOwner = -1;
+	monster.isRaisedUndead = false;
+	if ((monster.flags & MFLAG_PLAYER_MINION) != 0) {
+		if ((monster.flags & MFLAG_GOLEM) != 0) {
+			monster.minionOwner = static_cast<int8_t>(monster.getId());
+		} else {
+			// Raised undead can only be loaded from a single-player save, so their owner is the local player.
+			monster.minionOwner = static_cast<int8_t>(MyPlayerId);
+			monster.isRaisedUndead = true;
+		}
+	}
 	monster.activeForTicks = file->NextLE<uint8_t>();
 	file->Skip(3); // Alignment
 	file->Skip(4); // Unused
